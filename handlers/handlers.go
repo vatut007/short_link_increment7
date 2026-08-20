@@ -4,10 +4,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"shortener/cmd/shortener/config"
-	"shortener/store"
-	"shortener/utils"
 	"strings"
+
+	"github.com/vatut007/short_link_increment7/cmd/shortener/config"
+	"github.com/vatut007/short_link_increment7/store"
+	"github.com/vatut007/short_link_increment7/utils"
 
 	"github.com/go-chi/chi/v5"
 )
