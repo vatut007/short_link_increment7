@@ -1,43 +1,50 @@
 package handlers
 
 import (
-	"io"
 	"net/http"
-	"net/url"
-	"strings"
 
-	"github.com/vatut007/short_link_increment7/cmd/shortener/config"
+	"github.com/vatut007/short_link_increment7/dto"
+	"github.com/vatut007/short_link_increment7/service"
 	"github.com/vatut007/short_link_increment7/store"
-	"github.com/vatut007/short_link_increment7/utils"
 
 	"github.com/go-chi/chi/v5"
 )
 
+type UrlUserCreate = dto.UrlCreateDto
+
 func createShorten(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Content-Type") != "text/plain" {
+	content_type := r.Header.Get("Content-Type")
+	if content_type != "text/plain" {
 		http.Error(w, "Content type must be text/plain", http.StatusUnsupportedMediaType)
 		return
 	}
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
-		return
+	urlSrv := service.UrlService{
+		Request:        r,
+		ResponseWriter: w,
 	}
-	originalURL := string(bodyBytes)
-	if strings.TrimSpace(originalURL) == "" {
-		http.Error(w, "Url is empty", http.StatusBadRequest)
-		return
-	}
-	if _, err := url.ParseRequestURI(originalURL); err != nil {
-		http.Error(w, "Invalid url", http.StatusBadRequest)
-		return
-	}
-	code := utils.GenerateShortCodeUrl(originalURL)
-	shortURL := config.ConfigApp.BaseURL + "/" + code
-	store.Store.Store(code, originalURL)
-	w.Header().Set("Content-Type", "text/plain")
+	err := urlSrv.GenerateShortUrl()
+	service.GetHttpErr(err, w)
+	w.Header().Set(urlSrv.GetHeaderParams())
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(shortURL))
+	urlSrv.WriteBody(w)
+}
+
+func apiCreateShorten(w http.ResponseWriter, r *http.Request) {
+	content_type := r.Header.Get("Content-Type")
+	if content_type != "application/json" {
+		http.Error(w, "Content type must be application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+	urlSrv := service.UrlService{
+		Request:        r,
+		ResponseWriter: w,
+	}
+	err := urlSrv.GenerateShortUrl()
+	service.GetHttpErr(err, w)
+	w.Header().Set(urlSrv.GetHeaderParams())
+	w.WriteHeader(http.StatusCreated)
+	urlSrv.WriteBody(w)
+
 }
 
 func getShorten(w http.ResponseWriter, r *http.Request) {
