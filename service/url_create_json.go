@@ -28,7 +28,10 @@ func (ui *UrlCreateJson) getHeader() (string, string) {
 }
 
 func (ui UrlCreateJson) writeBody(w http.ResponseWriter) {
-
+	response := dto.UrlCreateResponseDto{
+		Result: ui.UrlService.shortURL,
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 func (ui *UrlCreateJson) saveOriginalUrl(url string) {

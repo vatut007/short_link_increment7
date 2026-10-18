@@ -25,7 +25,9 @@ func (ui *UrlCreateText) getHeader() (string, string) {
 }
 
 func (ui UrlCreateText) writeBody(w http.ResponseWriter) {
-	w.Write([]byte(ui.UrlService.shortURL))
+	if _, err := w.Write([]byte(ui.UrlService.shortURL)); err != nil {
+		panic(err)
+	}
 }
 func (ui *UrlCreateText) saveOriginalUrl(url string) {
 	ui.UrlService.OriginalURL = url

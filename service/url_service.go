@@ -35,8 +35,10 @@ func (u *UrlService) getFabByContentType(content_type ContentType) error {
 func (ui *UrlService) GenerateShortUrl() error {
 	r := ui.Request
 	content_type := r.Header.Get("Content-Type")
-	err := ui.getFabByContentType(ContentType(content_type))
-	ui.CreateUrlInter.loadBody()
+	if err := ui.getFabByContentType(ContentType(content_type)); err != nil {
+		return err
+	}
+	err := ui.CreateUrlInter.loadBody()
 	if err != nil {
 		return err
 	}
