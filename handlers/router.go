@@ -14,3 +14,13 @@ func RegisterHandlers() {
 	})
 	Main_router.Post("/", createShorten)
 }
+
+func NewRouter() chi.Router {
+	r := chi.NewRouter()
+	r.Post("/", createShorten)
+	r.Get("/{short_code}", getShorten)
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/shorten", apiCreateShorten)
+	})
+	return r
+}
