@@ -10,8 +10,8 @@ import (
 
 func main() {
 	config.ParseFlags()
-	handlers.RegisterHandlers()
-	if err := http.ListenAndServe(config.ConfigApp.ServerAddress, handlers.Main_router); err != nil {
+	main_router := handlers.NewRouter()
+	if err := http.ListenAndServe(config.ConfigApp.ServerAddress, main_router); err != nil {
 		log.Fatal(err)
 	}
 }
