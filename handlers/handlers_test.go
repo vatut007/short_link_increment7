@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vatut007/short_link_increment7/cmd/shortener/config"
+	"github.com/vatut007/short_link_increment7/dto"
 )
 
 func Test_create_handlers(t *testing.T) {
@@ -34,12 +37,16 @@ func Test_create_handlers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			config.ConfigApp.BaseURL = "http://example.com"
 			request := httptest.NewRequest(http.MethodPost, "/", strings.NewReader("https://www.yandex.ru"))
-			request.Header.Set("Content-Type", "text/plain")
+			request.Header.Set("Content-Type", test.want.contentType)
 			w := httptest.NewRecorder()
 			createShorten(w, request)
 			res := w.Result()
 			assert.Equal(t, test.want.code, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					log.Printf("close body: %v", err)
+				}
+			}()
 			resBody, err := io.ReadAll(res.Body)
 
 			require.NoError(t, err)
@@ -48,7 +55,45 @@ func Test_create_handlers(t *testing.T) {
 		})
 	}
 }
-
+func Test_create_api_handlers(t *testing.T) {
+	type want struct {
+		code        int
+		contentType string
+	}
+	tests := []struct {
+		name string
+		want want
+	}{
+		{
+			name: "test create shorten api",
+			want: want{
+				code:        201,
+				contentType: "application/json",
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			config.ConfigApp.BaseURL = "http://example.com"
+			body_dto := dto.UrlCreateDto{URL: "https://www.yandex.ru"}
+			reqBody, err := json.Marshal(body_dto)
+			require.NoError(t, err)
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(string(reqBody)))
+			request.Header.Set("Content-Type", test.want.contentType)
+			w := httptest.NewRecorder()
+			router := NewRouter()
+			router.ServeHTTP(w, request)
+			res := w.Result()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					log.Printf("close body err:%v", err)
+				}
+			}()
+			assert.Equal(t, http.StatusCreated, res.StatusCode)
+			assert.Equal(t, "application/json", res.Header.Get("Content-Type"))
+		})
+	}
+}
 func Test_get_handlers(t *testing.T) {
 	type want struct {
 		code        int
@@ -81,7 +126,11 @@ func Test_get_handlers(t *testing.T) {
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, request)
 			res := w.Result()
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					log.Printf("close body: %v", err)
+				}
+			}()
 			require.Equal(t, http.StatusCreated, res.StatusCode)
 			resBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
@@ -93,7 +142,11 @@ func Test_get_handlers(t *testing.T) {
 			getRequest.Header.Set("Content-Type", "text/plain")
 			router.ServeHTTP(gw, getRequest)
 			gres := gw.Result()
-			defer gres.Body.Close()
+			defer func() {
+				if err := gres.Body.Close(); err != nil {
+					log.Printf("close body: %v", err)
+				}
+			}()
 			assert.Equal(t, test.want.code, gres.StatusCode)
 			assert.Equal(t, test.want.location, gres.Header.Get("Location"))
 		})
