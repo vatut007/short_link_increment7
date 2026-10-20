@@ -59,6 +59,7 @@ func Test_create_api_handlers(t *testing.T) {
 	type want struct {
 		code        int
 		contentType string
+		body        dto.UrlCreateDto
 	}
 	tests := []struct {
 		name string
@@ -69,14 +70,31 @@ func Test_create_api_handlers(t *testing.T) {
 			want: want{
 				code:        201,
 				contentType: "application/json",
+				body:        dto.UrlCreateDto{URL: "https://www.yandex.ru"},
+			},
+		},
+		{
+			name: "test create shorten wrong content type",
+			want: want{
+				code:        415,
+				contentType: "text/plain",
+				body:        dto.UrlCreateDto{URL: "https://www.yandex.ru"},
+			},
+		},
+		{
+			name: "test empty url",
+			want: want{
+				code:        400,
+				contentType: "application/json",
+				body:        dto.UrlCreateDto{},
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			config.ConfigApp.BaseURL = "http://example.com"
-			body_dto := dto.UrlCreateDto{URL: "https://www.yandex.ru"}
-			reqBody, err := json.Marshal(body_dto)
+			// body_dto := dto.UrlCreateDto{URL: "https://www.yandex.ru"}
+			reqBody, err := json.Marshal(test.want.body)
 			require.NoError(t, err)
 			request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(string(reqBody)))
 			request.Header.Set("Content-Type", test.want.contentType)
@@ -89,8 +107,10 @@ func Test_create_api_handlers(t *testing.T) {
 					log.Printf("close body err:%v", err)
 				}
 			}()
-			assert.Equal(t, http.StatusCreated, res.StatusCode)
-			assert.Equal(t, "application/json", res.Header.Get("Content-Type"))
+			assert.Equal(t, test.want.code, res.StatusCode)
+			if test.want.code == http.StatusCreated {
+				assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+			}
 		})
 	}
 }

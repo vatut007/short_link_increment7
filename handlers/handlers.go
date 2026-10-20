@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"mime"
 	"net/http"
 
 	"github.com/vatut007/short_link_increment7/dto"
@@ -14,7 +15,8 @@ type UrlUserCreate = dto.UrlCreateDto
 
 func createShorten(w http.ResponseWriter, r *http.Request) {
 	content_type := r.Header.Get("Content-Type")
-	if content_type != "text/plain" {
+	mt, _, err := mime.ParseMediaType(content_type)
+	if err != nil || mt != "text/plain" {
 		http.Error(w, "Content type must be text/plain", http.StatusUnsupportedMediaType)
 		return
 	}
@@ -22,8 +24,11 @@ func createShorten(w http.ResponseWriter, r *http.Request) {
 		Request:        r,
 		ResponseWriter: w,
 	}
-	err := urlSrv.GenerateShortUrl()
-	service.GetHttpErr(err, w)
+	err = urlSrv.GenerateShortUrl(mt)
+	if err != nil {
+		service.GetHttpErr(err, w)
+		return
+	}
 	w.Header().Set(urlSrv.GetHeaderParams())
 	w.WriteHeader(http.StatusCreated)
 	urlSrv.WriteBody(w)
@@ -31,7 +36,8 @@ func createShorten(w http.ResponseWriter, r *http.Request) {
 
 func apiCreateShorten(w http.ResponseWriter, r *http.Request) {
 	content_type := r.Header.Get("Content-Type")
-	if content_type != "application/json" {
+	mt, _, err := mime.ParseMediaType(content_type)
+	if err != nil || mt != "application/json" {
 		http.Error(w, "Content type must be application/json", http.StatusUnsupportedMediaType)
 		return
 	}
@@ -39,8 +45,10 @@ func apiCreateShorten(w http.ResponseWriter, r *http.Request) {
 		Request:        r,
 		ResponseWriter: w,
 	}
-	err := urlSrv.GenerateShortUrl()
-	service.GetHttpErr(err, w)
+	if err := urlSrv.GenerateShortUrl(mt); err != nil {
+		service.GetHttpErr(err, w)
+		return
+	}
 	w.Header().Set(urlSrv.GetHeaderParams())
 	w.WriteHeader(http.StatusCreated)
 	urlSrv.WriteBody(w)

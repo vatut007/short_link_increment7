@@ -32,10 +32,10 @@ func (u *UrlService) getFabByContentType(content_type ContentType) error {
 	return nil
 }
 
-func (ui *UrlService) GenerateShortUrl() error {
-	r := ui.Request
-	content_type := r.Header.Get("Content-Type")
-	if err := ui.getFabByContentType(ContentType(content_type)); err != nil {
+func (ui *UrlService) GenerateShortUrl(contentType string) error {
+	// r := ui.Request
+	// content_type := r.Header.Get("Content-Type")
+	if err := ui.getFabByContentType(ContentType(contentType)); err != nil {
 		return err
 	}
 	err := ui.CreateUrlInter.loadBody()

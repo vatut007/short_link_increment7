@@ -1,21 +1,15 @@
 package service
 
 import (
+	"errors"
 	"net/http"
 )
 
 func GetHttpErr(err error, w http.ResponseWriter) {
-	switch err {
-	case ErrEmptyUrl:
-		err_message := ErrEmptyUrl.Error()
-		http.Error(w, err_message, http.StatusBadRequest)
-		return
-	case ErrNoType:
-		err_message := ErrNoType.Error()
-		http.Error(w, err_message, http.StatusBadRequest)
-		return
-	case ErrInvalidUrl:
-		err_message := ErrInvalidUrl.Error()
-		http.Error(w, err_message, http.StatusBadRequest)
+	switch {
+	case errors.Is(err, ErrEmptyUrl), errors.Is(err, ErrInvalidUrl), errors.Is(err, ErrNoType):
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	default:
+		http.Error(w, "bad request", http.StatusBadRequest)
 	}
 }
